@@ -12,5 +12,5 @@ self.addEventListener("fetch",e=>{
  if(e.request.method!=="GET") return;
  e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(r=>{
    const copy=r.clone(); caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{}); return r;
- }).catch(()=>caches.match("./index.html"))));
+ }).catch(()=>e.request.mode==="navigate"?caches.match("./index.html"):Response.error())));
 });
