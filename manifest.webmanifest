@@ -1,0 +1,10 @@
+{
+  "name": "Cognitive Assessment v1.0",
+  "short_name": "Cognitive Test",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#111827",
+  "lang": "vi",
+  "description": "Rule-based adaptive cognitive assessment prototype"
+}
