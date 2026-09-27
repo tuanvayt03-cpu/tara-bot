@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "CAA-1.0-web.2";
+const VERSION = "CAA-1.0-web.3";
 const SCORING_VERSION = "SC-1.0";
 const ROUTER_VERSION = "AR-1.0";
 const EVALUATOR_VERSION = "EC-1.0";
@@ -158,7 +158,7 @@ const A = {
   ],
   4:[
    ["Bốn người A,B,C,D mỗi người chọn một số khác nhau 1–4. A>B; A<C; C<D; B<C. Thứ tự giá trị từ nhỏ đến lớn là?",["B,A,C,D","B,C,A,D","A,B,C,D","D,C,B,A"],0],
-   ["Có đúng hai mệnh đề sau đúng: P; Q; P→R; Q→không R. Nếu P và Q đều đúng thì điều gì xảy ra?",["Điều kiện nhất quán","Có ít nhất 3 mệnh đề đúng","Chỉ 2 mệnh đề đúng","Không thể xác định"],1],
+   ["Ba biến P,Q,R có đúng hai biến đúng. Nếu P đúng thì Q sai. Nếu Q đúng thì P đúng. Cặp biến đúng là?",["P và R","P và Q","Q và R","Không xác định"],0],
    ["Một mã gồm 3 ký tự khác nhau từ A,B,C,D và bắt buộc có cả B,C. A không đầu; B đứng trước C; D không cuối. Mã nào hợp lệ?",["ABC","DBA","DBC","CAD"],2]
   ]
  },
