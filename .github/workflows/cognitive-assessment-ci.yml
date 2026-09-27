@@ -1,0 +1,33 @@
+name: Cognitive Assessment CI
+
+on:
+  push:
+    branches:
+      - cognitive-assessment-v1
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: JavaScript syntax
+        run: node --check app.js
+      - name: Structural smoke checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s index.html
+          test -s style.css
+          test -s app.js
+          grep -q 'jspsych@8.3.0' index.html
+          grep -q 'SC-1.0' app.js
+          grep -q 'AR-1.0' app.js
+          grep -q 'EC-1.0' app.js
+          grep -q 'Copy AI Bundle' app.js
+          grep -q 'Export JSON' app.js
+          grep -q 'Không phải test IQ chuẩn hóa' app.js
+          ! grep -q 'TODO' app.js
