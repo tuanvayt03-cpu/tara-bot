@@ -152,14 +152,14 @@ const A = {
    ["2, 6, 18, 54, ?",["108","126","162","216"],2]
   ],
   3:[
-   ["Ba hộp X,Y,Z có đúng một hộp chứa đồng xu. X nói “xu ở Y”. Y nói “xu không ở Y”. Chỉ một câu nói đúng. Xu ở đâu?",["X","Y","Z","Không đủ dữ liệu"],1],
+   ["Ba hộp X,Y,Z có đúng một hộp chứa đồng xu. X nói “xu không ở X”. Y nói “xu ở X”. Z nói “xu không ở Z”. Chỉ một câu nói đúng. Xu ở đâu?",["X","Y","Z","Không đủ dữ liệu"],2],
    ["Nếu P→Q; Q→(R hoặc S nhưng không cả hai); R→không T. Biết P và T đúng. Điều nào bắt buộc?",["R","S","không Q","không P"],1],
    ["A đứng trước B. C đứng sau B. D đứng trước A. Thứ tự nào bắt buộc đúng?",["D-A-B-C","A-D-B-C","D-B-A-C","C-B-A-D"],0]
   ],
   4:[
-   ["Bốn người A,B,C,D mỗi người chọn một số khác nhau 1–4. A>B; C<D; B<C. Thứ tự giá trị từ nhỏ đến lớn là?",["B,A,C,D","B,C,A,D","A,B,C,D","D,C,B,A"],1],
+   ["Bốn người A,B,C,D mỗi người chọn một số khác nhau 1–4. A>B; A<C; C<D; B<C. Thứ tự giá trị từ nhỏ đến lớn là?",["B,A,C,D","B,C,A,D","A,B,C,D","D,C,B,A"],0],
    ["Có đúng hai mệnh đề sau đúng: P; Q; P→R; Q→không R. Nếu P và Q đều đúng thì điều gì xảy ra?",["Điều kiện nhất quán","Có ít nhất 3 mệnh đề đúng","Chỉ 2 mệnh đề đúng","Không thể xác định"],1],
-   ["Một mã gồm 3 ký tự khác nhau từ A,B,C,D. A không đầu; B đứng trước C; D không cuối. Mã nào hợp lệ?",["ABCD","DBA","DBC","CAD"],2]
+   ["Một mã gồm 3 ký tự khác nhau từ A,B,C,D và bắt buộc có cả B,C. A không đầu; B đứng trước C; D không cuối. Mã nào hợp lệ?",["ABC","DBA","DBC","CAD"],2]
   ]
  },
  QR:{
@@ -223,9 +223,9 @@ const A = {
    ["Một điểm ở (trên,trái) xoay 90° kim đồng hồ rồi phản chiếu trục dọc. Vị trí cuối:",["trên-trái","trên-phải","dưới-trái","dưới-phải"],0]
   ],
   4:[
-   ["Một điểm bắt đầu trên-trái. Xoay 90° kim đồng hồ, phản chiếu trục ngang, rồi xoay 180°. Vị trí cuối:",["trên-trái","trên-phải","dưới-trái","dưới-phải"],2],
+   ["Một điểm bắt đầu trên-trái. Xoay 90° kim đồng hồ, phản chiếu trục ngang, rồi xoay 180°. Vị trí cuối:",["trên-trái","trên-phải","dưới-trái","dưới-phải"],0],
    ["Một hình vuông gập đôi dọc, gập ngang, rồi gập chéo; đục 1 lỗ không trên nếp. Khi mở hoàn toàn tối đa có:",["4","6","8","16"],2],
-   ["Mũi tên ↑: phản chiếu trục chéo y=x, quay 90° kim đồng hồ, rồi phản chiếu trục dọc. Hướng cuối:",["↑","↓","←","→"],2]
+   ["Mũi tên ↑: phản chiếu trục chéo y=x, quay 90° kim đồng hồ, rồi phản chiếu trục dọc. Hướng cuối:",["↑","↓","←","→"],1]
   ]
  }
 };
@@ -346,17 +346,19 @@ const SUPP=[
  {id:"PD1",domain:"PD",prompt:"Một phương án có upside lớn nhưng dữ liệu nền rất ít. Phản ứng tốt nhất?",options:["Chọn ngay.","Loại ngay.","Tách quyết định có thể đảo ngược/không đảo ngược, lấy thêm dữ liệu giá trị cao và đặt ngưỡng dừng.","Theo số đông."],key:2}
 ];
 
-function computeP1() {
+function computeP1(resetAdaptive=true) {
  ["GF","QR","VC","VS","WM","PS","LR"].forEach(d=>{
    const rs=state.responses.filter(r=>r.phase===1&&r.domain===d&&r.score!==null);
    const correct=rs.reduce((a,b)=>a+(b.score||0),0);
    state.phase1[d]={valid:rs.length,correct,accuracy:rs.length?correct/rs.length:null};
  });
- ["GF","QR","VC","VS"].forEach(d=>{
-   const a=state.phase1[d].accuracy;
-   const level=a===null?2:(a<.40?1:a<.70?2:a<.90?3:4);
-   state.adaptive[d]={level,items:0,results:{1:[],2:[],3:[],4:[]},outcomes:{},done:false,stop_reason:null,start_level:level};
- });
+ if(resetAdaptive){
+  ["GF","QR","VC","VS"].forEach(d=>{
+    const a=state.phase1[d].accuracy;
+    const level=a===null?2:(a<.40?1:a<.70?2:a<.90?3:4);
+    state.adaptive[d]={level,items:0,results:{1:[],2:[],3:[],4:[]},outcomes:{},done:false,stop_reason:null,start_level:level};
+  });
+ }
  persist();
 }
 function settleAdaptive(d,level,outcome) {
@@ -516,7 +518,7 @@ function mdReport(bundle,checksum) {
 async function renderReport() {
  markPhase("Hoàn tất");
  $("#progress-label").textContent="100%";$("#progress-fill").style.width="100%";
- computeP1();
+ computeP1(false);
  const bundle=buildBundle();
  const checksum=await sha256(JSON.stringify(bundle));
  bundle.checksum_sha256=checksum;
