@@ -1,7 +1,7 @@
 (() => {
 "use strict";
 
-const VERSION = "CAA-1.0-web.1";
+const VERSION = "CAA-1.0-web.2";
 const SCORING_VERSION = "SC-1.0";
 const ROUTER_VERSION = "AR-1.0";
 const EVALUATOR_VERSION = "EC-1.0";
@@ -345,6 +345,19 @@ const SUPP=[
  {id:"ER1",domain:"ER",prompt:"Sau feedback, một đồng nghiệp trả lời ngắn hơn bình thường. Kết luận hợp lý nhất?",options:["Chắc chắn họ tức giận.","Chắc chắn họ mất động lực.","Có nhiều khả năng; cần thêm dữ liệu trước khi suy ra cảm xúc.","Không thể có cảm xúc nào liên quan."],key:2},
  {id:"PD1",domain:"PD",prompt:"Một phương án có upside lớn nhưng dữ liệu nền rất ít. Phản ứng tốt nhất?",options:["Chọn ngay.","Loại ngay.","Tách quyết định có thể đảo ngược/không đảo ngược, lấy thêm dữ liệu giá trị cao và đặt ngưỡng dừng.","Theo số đông."],key:2}
 ];
+function creativityTrial(){
+ return {
+  type:jsPsychSurveyHtmlForm,
+  preamble:'<div class="card"><h2>Creativity · divergent thinking</h2><p>Trong 2 phút, liệt kê càng nhiều cách dùng hợp lý cho một chiếc kẹp giấy càng tốt. Không cần cố “đẹp”; ưu tiên ý khác nhau.</p></div>',
+  html:'<label for="cr">Các cách dùng</label><textarea id="cr" name="answer" rows="8" required></textarea>',
+  button_label:"Lưu câu trả lời",
+  on_start:()=>markPhase("Supplemental · Creativity"),
+  on_finish:(data)=>{
+    record({item_id:"CR1",phase:1,domain:"CR",prompt:"Các cách dùng hợp lý cho một chiếc kẹp giấy",answer:String(data.response?.answer||""),key:"Rubric tách fluency/flexibility; originality chưa norm",score:null,rt_ms:data.rt,flags:["OPEN_RUBRIC"]});
+    tickProgress();
+  }
+ };
+}
 
 function computeP1(resetAdaptive=true) {
  ["GF","QR","VC","VS","WM","PS","LR"].forEach(d=>{
@@ -529,7 +542,11 @@ async function renderReport() {
    return '<div class="metric"><div><strong>'+d+'</strong><div class="small">'+(p===null?"P1 n/a":"P1 "+Math.round(p*100)+"%")+' · '+esc(s.phase2)+'</div></div><span class="badge '+badge+'">'+s.confidence+'</span></div>';
  }).join("");
  const integrity=bundle.integrity_flags.length?'<div class="notice warn">'+bundle.integrity_flags.map(esc).join(" · ")+'</div>':'<div class="notice ok">Không có integrity flag lớn được phát hiện.</div>';
- document.getElementById("app-shell").innerHTML='<main class="report"><section><div class="eyebrow">CAA-1.0 · SESSION '+esc(bundle.session_id.slice(0,8))+'</div><h1>Đã hoàn tất</h1><p>Kết quả dưới đây là <strong>evidence trong session</strong>, không phải IQ/percentile chuẩn hóa.</p>'+integrity+'</section><section><h2>Core evidence</h2>'+rows+'</section><section><h2>Metacognition</h2><p>Brier score trong session: <strong>'+(bundle.metacognition.brier===null?"n/a":bundle.metacognition.brier.toFixed(3))+'</strong>. Thấp hơn nghĩa là confidence gần đúng/sai thực tế hơn trong chính session này; không so với dân số.</p></section><section><h2>Phase 3</h2><p>'+(bundle.phase3_flags.length?esc(bundle.phase3_flags.join(", ")):"Không cần mở phase xác minh bổ sung theo rule hiện tại.")+'</p></section><section><h2>Giới hạn bắt buộc</h2><ul>'+bundle.interpretation_limits.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul><p class="small">Checksum: '+checksum+'</p></section><div class="actions"><button class="primary" id="copy-ai">Copy AI Bundle</button><button class="secondary" id="copy-qa">Copy full Q&A</button><button class="secondary" id="dl-json">Export JSON</button><button class="secondary" id="dl-md">Export Markdown</button><button class="secondary" id="print">In / Save PDF</button><button class="danger" id="restart">Làm phiên mới</button></div></main>';
+ const suppRows=["SR","ER","PD"].map(d=>{
+   const r=state.responses.find(x=>x.domain===d);
+   return '<div class="metric"><div><strong>'+d+'</strong><div class="small">'+(r?esc(r.item_id):"n/a")+'</div></div><span class="badge '+(r&&r.score===1?"ok":"warn")+'">'+(r?(r.score===1?"phù hợp key protocol":"cần xem lại evidence"):"n/a")+'</span></div>';
+ }).join("")+'<div class="metric"><div><strong>CR</strong><div class="small">Divergent-thinking sample</div></div><span class="badge">'+(state.responses.some(x=>x.domain==="CR")?"đã thu thập":"n/a")+'</span></div>';
+ document.getElementById("app-shell").innerHTML='<main class="report"><section><div class="eyebrow">CAA-1.0 · SESSION '+esc(bundle.session_id.slice(0,8))+'</div><h1>Đã hoàn tất</h1><p>Kết quả dưới đây là <strong>evidence trong session</strong>, không phải IQ/percentile chuẩn hóa.</p>'+integrity+'</section><section><h2>Core evidence</h2>'+rows+'</section><section><h2>Supplemental</h2><p class="small">Tách khỏi general intelligence; không dùng để suy ra tính cách.</p>'+suppRows+'</section><section><h2>Metacognition</h2><p>Brier score trong session: <strong>'+(bundle.metacognition.brier===null?"n/a":bundle.metacognition.brier.toFixed(3))+'</strong>. Thấp hơn nghĩa là confidence gần đúng/sai thực tế hơn trong chính session này; không so với dân số.</p></section><section><h2>Phase 3</h2><p>'+(bundle.phase3_flags.length?esc(bundle.phase3_flags.join(", ")):"Không cần mở phase xác minh bổ sung theo rule hiện tại.")+'</p></section><section><h2>Giới hạn bắt buộc</h2><ul>'+bundle.interpretation_limits.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul><p class="small">Checksum: '+checksum+'</p></section><div class="actions"><button class="primary" id="copy-ai">Copy AI Bundle</button><button class="secondary" id="copy-qa">Copy full Q&A</button><button class="secondary" id="dl-json">Export JSON</button><button class="secondary" id="dl-md">Export Markdown</button><button class="secondary" id="print">In / Save PDF</button><button class="danger" id="restart">Làm phiên mới</button></div></main>';
  const evaluatorPrompt="Bạn là evaluator thứ hai. Không thay đổi deterministic score. Đọc Assessment Bundle theo SC-1.0; kiểm tra scoring, adaptive trace, integrity và evidence trước khi diễn giải. Mỗi kết luận phải trích item IDs. Không phát IQ/percentile/top-x% hay chẩn đoán. Nêu rõ chỗ chắc chắn, mâu thuẫn, alternative explanations và khuyến nghị.\n\nASSESSMENT BUNDLE:\n"+JSON.stringify(bundle,null,2);
  $("#copy-ai").onclick=()=>navigator.clipboard.writeText(evaluatorPrompt).then(()=>alert("Đã copy AI Bundle"));
  $("#copy-qa").onclick=()=>navigator.clipboard.writeText(state.responses.map(r=>`[${r.item_id}] Q: ${r.prompt}\nA: ${r.answer}\nKey: ${r.key}\nScore: ${r.score} · RT: ${r.rt_ms}ms · Confidence: ${r.confidence}\n`).join("\n")).then(()=>alert("Đã copy full Q&A"));
@@ -580,6 +597,7 @@ timeline.push(...psTimeline());
 
 timeline.push(phaseIntro("Supplemental","Các câu sau được báo cáo riêng, không gộp thành “general intelligence”.","Supplemental"));
 SUPP.forEach(q=>{timeline.push(mcTrial(q,"Supplemental"));timeline.push(confidenceTrial("Supplemental"));});
+timeline.push(creativityTrial());
 timeline.push({
  type:jsPsychHtmlButtonResponse,
  stimulus:'<div class="card"><h2>Chuẩn bị Phase 2</h2><p>Hệ thống sẽ route độ khó theo Phase 1. Không có điểm IQ/percentile nào được tạo ở bước này.</p></div>',
